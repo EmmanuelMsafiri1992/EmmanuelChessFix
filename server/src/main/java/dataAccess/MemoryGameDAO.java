@@ -1,28 +1,28 @@
 package dataAccess;
 
-import model.gameData;
+import model.GameData;
 import chess.ChessGame;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 // In-memory implementation of gameDAO for managing game data
-public class MemoryGameDAO implements gameDAO {
+public class MemoryGameDAO implements GameDAO {
     // Map to store games with game ID as key and gameData as value
-    private final Map<Integer, gameData> games = new HashMap<>();
+    private final Map<Integer, GameData> games = new HashMap<>();
     // Counter for generating unique game IDs
     private int nextGameID = 1;
 
     // Creates a new game with the given name
     @Override
-    public gameData createGame(String gameName) throws DataAccessException {
+    public GameData createGame(String gameName) throws DataAccessException {
         // Check if game name is null or empty
         if (gameName == null || gameName.trim().isEmpty()) {
             // Throw exception for invalid game name
             throw new DataAccessException("bad request");
         }
         // Create new gameData with next ID, null players, given name, and new ChessGame
-        gameData game = new gameData(nextGameID++, null, null, gameName, new ChessGame());
+        GameData game = new GameData(nextGameID++, null, null, gameName, new ChessGame());
         // Store gameData in the map with game ID as key
         games.put(game.gameID(), game);
         // Return the created gameData
@@ -31,9 +31,9 @@ public class MemoryGameDAO implements gameDAO {
 
     // Retrieves game data for a given game ID
     @Override
-    public gameData getGame(int gameID) throws DataAccessException {
+    public GameData getGame(int gameID) throws DataAccessException {
         // Get gameData from map using game ID
-        gameData game = games.get(gameID);
+        GameData game = games.get(gameID);
         // Check if game exists
         if (game == null) {
             // Throw exception if game is not found
@@ -45,14 +45,14 @@ public class MemoryGameDAO implements gameDAO {
 
     // Lists all games in storage
     @Override
-    public Collection<gameData> listgame() throws DataAccessException {
+    public Collection<GameData> listgame() throws DataAccessException {
         // Return all gameData objects from the map
         return games.values();
     }
 
     // Updates an existing game
     @Override
-    public void updateGame(gameData game) throws DataAccessException {
+    public void updateGame(GameData game) throws DataAccessException {
         // Check if game is null or not in map
         if (game == null || !games.containsKey(game.gameID())) {
             // Throw exception for invalid game

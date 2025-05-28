@@ -1,5 +1,5 @@
 package server;
-import model.gameData;
+import model.GameData;
 import java.util.Collection;
 
-public record ListGameResponse(Collection<gameData> game){ }
+public record ListGameResponse(Collection<GameData> game){ }

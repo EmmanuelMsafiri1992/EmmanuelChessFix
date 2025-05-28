@@ -1,19 +1,19 @@
 package service;
 
-import dataAccess.authDAO;
-import dataAccess.gameDAO;
-import model.gameData;
+import dataAccess.AuthDAO;
+import dataAccess.GameDAO;
+import model.GameData;
 import dataAccess.DataAccessException;
 import java.util.Collection;
 
 // Service class for managing game-related operations
-public class gameService {
+public class GameService {
     // Data access objects for games and authentication
-    private final gameDAO game_DAO;
-    private final authDAO auth_DAO;
+    private final GameDAO game_DAO;
+    private final AuthDAO auth_DAO;
 
     // Constructor initializes game and auth DAOs
-    public gameService(gameDAO game_DAO, authDAO auth_DAO) {
+    public GameService(GameDAO game_DAO, AuthDAO auth_DAO) {
         // Store gameDAO for game data operations
         this.game_DAO = game_DAO;
         // Store authDAO for authentication checks
@@ -21,11 +21,11 @@ public class gameService {
     }
 
     // Creates a new game with the given auth token and name
-    public gameData createGame(String authToken, String gameName) throws DataAccessException {
+    public GameData createGame(String authToken, String gameName) throws DataAccessException {
         // Verify auth token exists
-        auth_DAO.getAuth(authToken);
+        auth_DAO.getAuthToken(authToken);
         // Check if auth token is null or invalid
-        if (authToken == null || auth_DAO.getAuth(authToken) == null) {
+        if (authToken == null || auth_DAO.createAuthToken(authToken) == null) {
             // Throw exception for unauthorized access
             throw new DataAccessException("unauthorized");
         }
@@ -34,9 +34,9 @@ public class gameService {
     }
 
     // Lists all games for a valid auth token
-    public Collection<gameData> listGames(String authToken) throws DataAccessException {
+    public Collection<GameData> listGames(String authToken) throws DataAccessException {
         // Check if auth token is null or invalid
-        if (authToken == null || auth_DAO.getAuth(authToken) == null) {
+        if (authToken == null || auth_DAO.getAuthToken(authToken) == null) {
             // Throw exception for unauthorized access
             throw new DataAccessException("unauthorized");
         }
@@ -47,7 +47,7 @@ public class gameService {
     // Joins a user to a game with the specified color
     public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException {
         // Check if auth token is null or invalid
-        if (authToken == null || auth_DAO.getAuth(authToken) == null) {
+        if (authToken == null || auth_DAO.getAuthToken(authToken) == null) {
             // Throw exception for unauthorized access
             throw new DataAccessException("unauthorized");
         }
@@ -57,9 +57,9 @@ public class gameService {
             throw new DataAccessException("bad request");
         }
         // Get game data by game ID
-        gameData game = game_DAO.getGame(gameID);
+        GameData game = game_DAO.getGame(gameID);
         // Get username from auth token
-        String username = auth_DAO.getAuth(authToken).username();
+        String username = auth_DAO.getAuthToken(authToken).username();
         // Check if white player slot is taken
         if (playerColor.equalsIgnoreCase("WHITE") && game.whiteUsername() != null) {
             // Throw exception if white slot is occupied
@@ -71,14 +71,14 @@ public class gameService {
             throw new DataAccessException("already exists");
         }
         // Declare variable for updated game data
-        gameData updatedGame;
+        GameData updatedGame;
         // Assign user to white player slot if requested
         if (playerColor.equalsIgnoreCase("WHITE")) {
             // Create new gameData with user as white player
-            updatedGame = new gameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
+            updatedGame = new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game());
         } else {
             // Create new gameData with user as black player
-            updatedGame = new gameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
+            updatedGame = new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
         }
         // Update game data in storage
         game_DAO.updateGame(updatedGame);

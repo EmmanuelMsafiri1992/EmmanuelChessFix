@@ -1,68 +1,78 @@
 package dataAccess;
 
-import model.authData;
+import model.AuthData;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-// In-memory implementation of authDAO for managing authentication data
-public class MemoryAuthDAO implements authDAO {
-    // Map to store auth tokens and their associated authData
-    private final Map<String, authData> auths = new HashMap<>();
+/**
+ * In-memory implementation of the AuthDAO interface for managing authentication data.
+ * Stores authentication tokens and associated data in a HashMap.
+ */
+public class MemoryAuthDAO implements AuthDAO {
+    /** Map to store authentication tokens and their associated AuthData objects. */
+    private final Map<String, AuthData> auths = new HashMap<>();
 
-    // Creates a new auth token for a given username
+    /**
+     * Creates a new authentication token for the specified username.
+     *
+     * @param username the username to associate with the new authentication token
+     * @return the created AuthData object containing the token and username
+     * @throws DataAccessException if the username is null or empty
+     */
     @Override
-    public authData createAuth(String username) throws DataAccessException {
-        // Check if username is null or empty
+    public AuthData createAuthToken(String username) throws DataAccessException {
         if (username == null || username.trim().isEmpty()) {
-            // Throw exception for invalid username
             throw new DataAccessException("bad request");
         }
-        // Generate a unique auth token using UUID
+        // Generate a unique authentication token
         String authToken = UUID.randomUUID().toString();
-        // Create new authData object with token and username
-        authData auth = new authData(authToken, username);
-        // Store authData in the map with token as key
-        auths.put(authToken, auth);
-        // Return the created authData
-        return auth;
+        AuthData authData = new AuthData(authToken, username);
+        auths.put(authToken, authData);
+        return authData;
     }
 
-    // Retrieves auth data for a given auth token
+    /**
+     * Retrieves authentication data for the specified authentication token.
+     *
+     * @param authToken the authentication token to look up
+     * @return the AuthData object associated with the token
+     * @throws DataAccessException if the token is null or not found
+     */
     @Override
-    public authData getAuth(String authToken) throws DataAccessException {
-        // Check if auth token is null
+    public AuthData getAuthToken(String authToken) throws DataAccessException {
         if (authToken == null) {
-            // Throw exception for null token
             throw new DataAccessException("unauthorized");
         }
-        // Get authData from map using token
-        authData auth = auths.get(authToken);
-        // Check if authData exists
-        if (auth == null) {
-            // Throw exception if token is invalid
+        AuthData authData = auths.get(authToken);
+        if (authData == null) {
             throw new DataAccessException("unauthorized");
         }
-        // Return the found authData
-        return auth;
+        return authData;
     }
 
-    // Deletes an auth token from storage
+    /**
+     * Deletes the specified authentication token from storage.
+     *
+     * @param authToken the authentication token to remove
+     * @throws DataAccessException if the token is null or not found
+     */
     @Override
-    public void deleteAuth(String authToken) throws DataAccessException {
-        // Check if token is null or not in map
+    public void deleteAuthToken(String authToken) throws DataAccessException {
         if (authToken == null || !auths.containsKey(authToken)) {
-            // Throw exception for invalid token
             throw new DataAccessException("unauthorized");
         }
-        // Remove authData from map
         auths.remove(authToken);
     }
 
-    // Clears all auth data from storage
+    /**
+     * Clears all authentication data from storage.
+     *
+     * @throws DataAccessException if the clear operation fails
+     */
     @Override
-    public void clear() {
-        // Remove all entries from the map
+    public void clearAll() throws DataAccessException {
         auths.clear();
     }
 }

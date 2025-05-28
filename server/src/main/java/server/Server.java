@@ -5,269 +5,297 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dataAccess.*;
-import model.*;
-import service.*;
-import spark.*;
-import java.util.*;
+import model.AuthData;
+import model.UserData;
+import model.GameData;
+import service.UserService;
+import service.AuthService;
+import service.GameService;
+import spark.Request;
+import spark.Response;
+import spark.Spark;
 
-// Main server class for handling HTTP requests for user, auth, and game services
+import java.util.Collection;
+
+/**
+ * Main server class for handling HTTP requests related to user, authentication, and game services.
+ */
 public class Server {
-    // Service objects for business logic
-    private final userService userService;
-    private final authService authService;
-    private final gameService gameService;
-    // Gson for JSON serialization/deserialization
+    /** Service for user-related operations. */
+    private final UserService userService;
+    /** Service for authentication operations. */
+    private final AuthService authService;
+    /** Service for game-related operations. */
+    private final GameService gameService;
+    /** Gson instance for JSON serialization and deserialization. */
     private final Gson gson;
 
-    // Constructor initializes data access objects and services
+    /**
+     * Constructs a Server instance, initializing data access objects and services.
+     */
     public Server() {
-        // Initialize in-memory DAOs for data storage
-        userDAO userDAO = new MemoryUserDAO(); // Stores user data
-        authDAO authDAO = new MemoryAuthDAO(); // Stores authentication tokens
-        gameDAO gameDAO = new MemoryGameDAO(); // Stores game data
-        // Initialize services with DAOs
-        this.userService = new userService(userDAO, authDAO); // Manages user operations
-        this.authService = new authService(authDAO); // Manages authentication
-        this.gameService = new gameService(gameDAO, authDAO); // Manages game operations
-        // Create Gson instance for JSON processing
+        UserDAO userDAO = new MemoryUserDAO();
+        AuthDAO authDAO = new MemoryAuthDAO();
+        GameDAO gameDAO = new MemoryGameDAO();
+        this.userService = new UserService(userDAO, authDAO);
+        this.authService = new AuthService(authDAO);
+        this.gameService = new GameService(gameDAO, authDAO);
         this.gson = new GsonBuilder().create();
     }
 
-    // Starts the server on the specified port and sets up endpoints
+    /**
+     * Starts the server on the specified port and configures HTTP endpoints.
+     *
+     * @param desiredPort the port to run the server on
+     * @return the actual port used by the server
+     */
     public int run(int desiredPort) {
-        Spark.port(desiredPort); // Set the server port
-        Spark.staticFiles.location("web"); // Serve static files from 'web' directory
-        // Define HTTP endpoints
-        Spark.post("/user", this::register); // Endpoint for user registration
-        Spark.post("/session", this::login); // Endpoint for user login
-        Spark.delete("/session", this::logout); // Endpoint for user logout
-        Spark.get("/game", this::listgames); // Endpoint to list all games
-        Spark.post("/game", this::createGame); // Endpoint to create a new game
-        Spark.put("/game", this::joinGame); // Endpoint to join a game
-        Spark.delete("/db", this::clear); // Endpoint to clear all data
-        Spark.init(); // Initialize the Spark server
-        Spark.awaitInitialization(); // Wait for server to start
-        return Spark.port(); // Return the actual port used
+        Spark.port(desiredPort);
+        Spark.staticFiles.location("web");
+        Spark.post("/user", this::register);
+        Spark.post("/session", this::login);
+        Spark.delete("/session", this::logout);
+        Spark.get("/game", this::listGames);
+        Spark.post("/game", this::createGame);
+        Spark.put("/game", this::joinGame);
+        Spark.delete("/db", this::clearAll);
+        Spark.init();
+        Spark.awaitInitialization();
+        return Spark.port();
     }
 
-    // Stops the server
+    /**
+     * Stops the server and waits for it to fully shut down.
+     */
     public void stop() {
-        Spark.stop(); // Stop the Spark server
-        Spark.awaitStop(); // Wait for server to fully stop
+        Spark.stop();
+        Spark.awaitStop();
     }
 
-    // Handles user registration
+    /**
+     * Handles user registration by creating a new user and authentication token.
+     *
+     * @param request  the HTTP request containing user data
+     * @param response the HTTP response
+     * @return a JSON response with authentication data or an error message
+     */
     private Object register(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String requestBody = request.body(); // Get raw request body
-        userData user; // Declare userData variable
+        response.type("application/json");
+        UserData user;
         try {
-            // Parse request body into userData object
-            user = gson.fromJson(requestBody, userData.class);
+            user = gson.fromJson(request.body(), UserData.class);
         } catch (Exception e) {
-            // Handle JSON parsing errors
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error: bad request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
         try {
-            // Register user and get auth token
-            authData authData = userService.register(user);
-            response.status(200); // Set status to 200 (OK)
-            return gson.toJson(authData); // Return auth data as JSON
+            AuthData authData = userService.register(user);
+            response.status(200);
+            return gson.toJson(authData);
         } catch (DataAccessException e) {
-            // Handle registration errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            // Customize message for "already taken" error
-            String mes = e.getMessage().toLowerCase().contains("already taken") ?
-                    "Error: already taken" : "Error: " + e.getMessage();
-            return gson.toJson(new ErrorResponse(mes)); // Return error message
+            response.status(getErrorStatus(e));
+            String message = e.getMessage().toLowerCase().contains("already taken")
+                    ? "Error: already taken" : "Error: " + e.getMessage();
+            return gson.toJson(new ErrorResponse(message));
         }
     }
 
-    // Handles clearing all data
-    private Object clear(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
+    /**
+     * Clears all user, authentication, and game data from storage.
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @return a JSON response indicating success or an error message
+     */
+    private Object clearAll(Request request, Response response) {
+        response.type("application/json");
         try {
-            // Clear all data from services
-            userService.clear(); // Clear user data
-            gameService.clear(); // Clear game data
-            authService.clear(); // Clear auth data
-            response.status(200); // Set status to 200 (OK)
-            return "{}"; // Return empty JSON object
+            userService.clearAll();
+            gameService.clear();
+            authService.clear();
+            response.status(200);
+            return "{}";
         } catch (DataAccessException e) {
-            // Handle data clearing errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            return gson.toJson(new ErrorResponse("Error: " + e.getMessage())); // Return error
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
-
-    // Handles joining a game
+    /**
+     * Handles joining a game with the specified game ID and player color.
+     *
+     * @param request  the HTTP request containing join game data
+     * @param response the HTTP response
+     * @return a JSON response indicating success or an error message
+     */
     private Object joinGame(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String authToken = request.headers("Authorization"); // Get auth token from header
-        JoinGameRequest join; // Declare join request variable
+        response.type("application/json");
+        String authToken = request.headers("Authorization");
+        JoinGameRequest join;
         try {
-            // Parse request body into JoinGameRequest
             join = gson.fromJson(request.body(), JoinGameRequest.class);
         } catch (Exception e) {
-            // Handle JSON parsing errors
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error - Bad Request smh")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
-        // Validate join request
         if (join == null || join.gameID() <= 0 || join.playerColor() == null) {
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error - Bad Request, real bad buddy")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
         try {
-            // Join game with auth token, game ID, and player color
             gameService.joinGame(authToken, join.gameID(), join.playerColor());
-            response.status(200); // Set status to 200 (OK)
-            return "{}"; // Return empty JSON object
+            response.status(200);
+            return "{}";
         } catch (DataAccessException e) {
-            // Handle game joining errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            return gson.toJson(new ErrorResponse("error - " + e.getMessage())); // Return error
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
 
-    // Handles creating a new game
+    /**
+     * Handles creating a new game with the specified name.
+     *
+     * @param request  the HTTP request containing game name data
+     * @param response the HTTP response
+     * @return a JSON response with the game ID or an error message
+     */
     private Object createGame(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String authToken = request.headers("Authorization"); // Get auth token from header
-        GameNameRequest gameName; // Declare game name request variable
+        response.type("application/json");
+        String authToken = request.headers("Authorization");
+        GameNameRequest gameName;
         try {
-            // Parse request body into GameNameRequest
             gameName = gson.fromJson(request.body(), GameNameRequest.class);
         } catch (Exception e) {
-            // Handle JSON parsing errors
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error - Bad Request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
-        // Validate game name
         if (gameName == null || gameName.gameName() == null || gameName.gameName().trim().isEmpty()) {
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error - Bad Request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
         try {
-            // Create game with auth token and game name
-            gameData game = gameService.createGame(authToken, gameName.gameName());
-            response.status(200); // Set status to 200 (OK)
-            return gson.toJson(new CreateGameResponse(game.gameID())); // Return game ID
+            GameData game = gameService.createGame(authToken, gameName.gameName());
+            response.status(200);
+            return gson.toJson(new CreateGameResponse(game.gameID()));
         } catch (DataAccessException e) {
-            // Handle game creation errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            return gson.toJson(new ErrorResponse("Error - " + e.getMessage())); // Return error
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
 
-    // Handles listing all games
-    private Object listgames(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String authToken = request.headers("Authorization"); // Get auth token from header
+    /**
+     * Handles listing all available games.
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @return a JSON response with the list of games or an error message
+     */
+    private Object listGames(Request request, Response response) {
+        response.type("application/json");
+        String authToken = request.headers("Authorization");
         try {
-            // Get list of games using auth token
-            Collection<gameData> games = gameService.listGames(authToken);
-            response.status(200); // Set status to 200 (OK)
-            return gson.toJson(new ListGamesResponse(games)); // Return games list as JSON
+            Collection<GameData> games = gameService.listGames(authToken);
+            response.status(200);
+            return gson.toJson(new ListGamesResponse(games));
         } catch (DataAccessException e) {
-            // Handle game listing errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            return gson.toJson(new ErrorResponse("Error - " + e.getMessage())); // Return error
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
 
-    // Handles user logout
+    /**
+     * Handles user logout by invalidating the authentication token.
+     *
+     * @param request  the HTTP request containing the auth token
+     * @param response the HTTP response
+     * @return a JSON response indicating success or an error message
+     */
     private Object logout(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String authToken = request.headers("Authorization"); // Get auth token from header
+        response.type("application/json");
+        String authToken = request.headers("Authorization");
         try {
-            // Logout user using auth token
             authService.logout(authToken);
-            response.status(200); // Set status to 200 (OK)
-            return "{}"; // Return empty JSON object
+            response.status(200);
+            return "{}";
         } catch (DataAccessException e) {
-            // Handle logout errors
-            response.status(getErrorStatus(e)); // Set appropriate error status
-            return gson.toJson(new ErrorResponse("Error" + e.getMessage())); // Return error
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
 
-    // Handles user login
+    /**
+     * Handles user login and creates an authentication token.
+     *
+     * @param request  the HTTP request containing login credentials
+     * @param response the HTTP response
+     * @return a JSON response with authentication data or an error message
+     */
     private Object login(Request request, Response response) {
-        response.type("application/json"); // Set response type to JSON
-        String requestBody = request.body(); // Get raw request body
-        // Check for empty or null request body
+        response.type("application/json");
+        String requestBody = request.body();
         if (requestBody == null || requestBody.trim().isEmpty()) {
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Bad Request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
-        JsonObject json; // Declare JSON object variable
+        JsonObject json;
         try {
-            // Parse request body into JSON object
             json = JsonParser.parseString(requestBody).getAsJsonObject();
         } catch (Exception e) {
-            // Handle JSON parsing errors
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Bad Request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
-        // Check for required fields
         boolean hasUsername = json.has("username") && !json.get("username").isJsonNull();
         boolean hasPassword = json.has("password") && !json.get("password").isJsonNull();
         if (!hasUsername || !hasPassword) {
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Error: Bad Request")); // Return error
+            response.status(400);
+            return gson.toJson(new ErrorResponse("Error: bad request"));
         }
         try {
-            // Extract username and password
             String username = json.get("username").getAsString();
             String password = json.get("password").getAsString();
-            // Validate username and password
             if (username == null || password == null || username.trim().isEmpty() || password.trim().isEmpty()) {
-                response.status(400); // Set status to 400 (Bad Request)
-                return gson.toJson(new ErrorResponse("Bad Request")); // Return error
+                response.status(400);
+                return gson.toJson(new ErrorResponse("Error: bad request"));
             }
-            // Create userData object for login
-            userData user = new userData(username.trim(), password.trim(), null);
-            try {
-                // Attempt login
-                authData authData = userService.login(user);
-                response.status(200); // Set status to 200 (OK)
-                return gson.toJson(authData); // Return auth data as JSON
-            } catch (DataAccessException e) {
-                // Handle login errors
-                int status = getErrorStatus(e); // Get appropriate error status
-                response.status(status); // Set status
-                return gson.toJson(new ErrorResponse("Error: " + e.getMessage())); // Return error
-            }
-        } catch (Exception e) {
-            // Handle general errors
-            response.status(400); // Set status to 400 (Bad Request)
-            return gson.toJson(new ErrorResponse("Bad Requesttttt")); // Return error
+            UserData user = new UserData(username.trim(), password.trim(), null);
+            AuthData authData = userService.login(user);
+            response.status(200);
+            return gson.toJson(authData);
+        } catch (DataAccessException e) {
+            response.status(getErrorStatus(e));
+            return gson.toJson(new ErrorResponse("Error: " + e.getMessage()));
         }
     }
 
-    // Maps exception messages to HTTP status codes
+    /**
+     * Maps exception messages to appropriate HTTP status codes.
+     *
+     * @param e the DataAccessException to process
+     * @return the corresponding HTTP status code
+     */
     private int getErrorStatus(DataAccessException e) {
-        String mes = e.getMessage().toLowerCase(); // Get lowercase error message
-        if (mes.contains("bad request") || mes.contains("game not found")) {
+        String message = e.getMessage().toLowerCase();
+        if (message.contains("bad request") || message.contains("game not found")) {
             return 400; // Bad Request
-        } else if (mes.contains("unauthorized")) {
+        } else if (message.contains("unauthorized")) {
             return 401; // Unauthorized
-        } else if (mes.contains("already exists") || mes.contains("already taken")) {
+        } else if (message.contains("already exists") || message.contains("already taken")) {
             return 403; // Forbidden
         }
         return 500; // Internal Server Error
     }
 
-    // Record for error response
+    /** Record for error response. */
     private record ErrorResponse(String message) {}
-    // Record for listing games response
-    private record ListGamesResponse(Collection<gameData> games) {}
-    // Record for create game response
+
+    /** Record for listing games response. */
+    private record ListGamesResponse(Collection<GameData> games) {}
+
+    /** Record for create game response. */
     private record CreateGameResponse(int gameID) {}
-    // Record for game name request
+
+    /** Record for game name request. */
     private record GameNameRequest(String gameName) {}
-    // Record for join game request
+
+    /** Record for join game request. */
     private record JoinGameRequest(int gameID, String playerColor) {}
 }

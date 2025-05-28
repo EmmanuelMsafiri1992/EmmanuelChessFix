@@ -1,22 +1,21 @@
 import chess.*;
 import com.google.gson.Gson;
 import dataAccess.*;
-import model.authData;
-import model.gameData;
-import model.userData;
-import server.*;
-import service.authService;
-import service.gameService;
-import service.userService;
+import model.AuthData;
+import model.GameData;
+import model.UserData;
+import service.AuthService;
+import service.GameService;
+import service.UserService;
 import spark.*;
 import java.util.Collection;
 
 // Main class to run the chess server and demonstrate a chess piece
 public class Main {
     // Service objects for user, authentication, and game operations
-    private final userService userService;
-    private final authService authService;
-    private final gameService gameService;
+    private final UserService userService;
+    private final AuthService authService;
+    private final GameService gameService;
     // Gson instance for JSON serialization/deserialization
     private final Gson gson;
 
@@ -25,17 +24,17 @@ public class Main {
      */
     public Main() {
         // Initialize in-memory user data access object
-        userDAO userDAO = new MemoryUserDAO();
+        UserDAO userDAO = new MemoryUserDAO();
         // Initialize in-memory auth data access object
-        authDAO authDAO = new MemoryAuthDAO();
+        AuthDAO authDAO = new MemoryAuthDAO();
         // Initialize in-memory game data access object
-        gameDAO gameDAO = new MemoryGameDAO();
+        GameDAO gameDAO = new MemoryGameDAO();
         // Initialize user service with user and auth DAOs
-        this.userService = new userService(userDAO, authDAO);
+        this.userService = new UserService(userDAO, authDAO);
         // Initialize auth service with auth DAO
-        this.authService = new authService(authDAO);
+        this.authService = new AuthService(authDAO);
         // Initialize game service with game and auth DAOs
-        this.gameService = new gameService(gameDAO, authDAO);
+        this.gameService = new GameService(gameDAO, authDAO);
         // Initialize Gson for JSON processing
         this.gson = new Gson();
     }
@@ -58,14 +57,14 @@ public class Main {
             res.type("application/json");
             try {
                 // Parse request body into userData object
-                userData user = gson.fromJson(req.body(), userData.class);
+                UserData user = gson.fromJson(req.body(), UserData.class);
                 // Check if user data is null
                 if (user == null) {
                     res.status(400);
                     return gson.toJson(new ErrorResponse("Error bad request"));
                 }
                 // Register user and get auth token
-                authData authData = userService.register(user);
+                AuthData authData = userService.register(user);
                 // Set status to 200 for success
                 res.status(200);
                 // Return auth data as JSON
@@ -89,14 +88,14 @@ public class Main {
             res.type("application/json");
             try {
                 // Parse request body into userData object
-                userData user = gson.fromJson(req.body(), userData.class);
+                UserData user = gson.fromJson(req.body(), UserData.class);
                 // Check if user data is null
                 if (user == null) {
                     res.status(400);
                     return gson.toJson(new ErrorResponse("Error bad request"));
                 }
                 // Log in user and get auth token
-                authData authData = userService.login(user);
+                AuthData authData = userService.login(user);
                 // Set status to 200 for success
                 res.status(200);
                 // Return auth data as JSON
@@ -181,7 +180,7 @@ public class Main {
                     return gson.toJson(new ErrorResponse("Error bad request"));
                 }
                 // Create game and get game data
-                gameData game = gameService.createGame(auth, request.gameName());
+                GameData game = gameService.createGame(auth, request.gameName());
                 // Set status to 200 for success
                 res.status(200);
                 // Return game ID in GameResponse as JSON
@@ -242,7 +241,7 @@ public class Main {
                 // Clear all auth data
                 authService.clear();
                 // Clear all user data
-                userService.clear();
+                userService.clearAll();
                 // Set status to 200 for success
                 res.status(200);
                 // Return empty JSON object
@@ -315,7 +314,7 @@ public class Main {
     // Record for error response
     private record ErrorResponse(String message) {}
     // Record for listing games response
-    private record ListGameResponse(Collection<gameData> games) {}
+    private record ListGameResponse(Collection<GameData> games) {}
     // Record for game creation response
     private record GameResponse(int gameID) {}
     // Record for game creation request

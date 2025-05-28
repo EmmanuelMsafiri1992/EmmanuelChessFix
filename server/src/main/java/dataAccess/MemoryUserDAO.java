@@ -1,18 +1,18 @@
 package dataAccess;
 
-import model.userData;
+import model.UserData;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 // In-memory implementation of userDAO for managing user data
-public class MemoryUserDAO implements userDAO {
+public class MemoryUserDAO implements UserDAO {
     // Map to store users with username as key and userData as value
-    private final Map<String, userData> users = new HashMap<>();
+    private final Map<String, UserData> users = new HashMap<>();
 
     // Creates a new user in storage
     @Override
-    public void createUser(userData user) throws DataAccessException {
+    public void createUser(UserData user) throws DataAccessException {
         // Check if user or username is null
         if (user == null || user.username() == null) {
             // Throw exception for invalid user
@@ -29,9 +29,9 @@ public class MemoryUserDAO implements userDAO {
 
     // Retrieves user data for a given username
     @Override
-    public userData getUser(String username) throws DataAccessException {
+    public UserData getUser(String username) throws DataAccessException {
         // Get userData from map using username
-        userData user = users.get(username);
+        UserData user = users.get(username);
         // Check if username is null
         if (username == null) {
             // Throw exception for null username
@@ -49,7 +49,7 @@ public class MemoryUserDAO implements userDAO {
     }
 
     // Returns all users in storage
-    public Collection<userData> getAllUsers() {
+    public Collection<UserData> getAllUsers() {
         // Return all userData objects from the map
         return users.values();
     }

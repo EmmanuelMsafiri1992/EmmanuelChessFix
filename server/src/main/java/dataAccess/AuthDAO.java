@@ -1,39 +1,42 @@
 package dataAccess;
 
-import model.authData;
+import model.AuthData;
 
-// Interface defining methods for managing authentication data
-public interface authDAO {
+/**
+ * Interface for managing authentication data operations.
+ * Provides methods to create, retrieve, delete, and clear authentication tokens.
+ */
+public interface AuthDAO {
     /**
-     * Creates a new authentication token for a given username.
+     * Creates a new authentication token for a specified username.
      *
-     * @param username the username to associate with the auth token
-     * @return the created authData object containing the token and username
-     * @throws DataAccessException if the username is invalid or creation fails
+     * @param username the username to associate with the new authentication token
+     * @return the created AuthData object containing the token and username
+     * @throws DataAccessException if the username is invalid or token creation fails
      */
-    authData createAuth(String username) throws DataAccessException;
+    AuthData createAuthToken(String username) throws DataAccessException;
 
     /**
-     * Retrieves authentication data for a given auth token.
+     * Retrieves authentication data associated with a given authentication token.
      *
      * @param authToken the authentication token to look up
-     * @return the authData object associated with the token
+     * @return the AuthData object associated with the provided token
      * @throws DataAccessException if the token is invalid or not found
      */
-    authData getAuth(String authToken) throws DataAccessException;
+    AuthData getAuthToken(String authToken) throws DataAccessException;
 
     /**
-     * Deletes an authentication token from storage.
+     * Deletes a specified authentication token from storage.
      *
-     * @param authToken the authentication token to delete
+     * @param authToken the authentication token to remove
      * @throws DataAccessException if the token is invalid or not found
      */
-    void deleteAuth(String authToken) throws DataAccessException;
+    void deleteAuthToken(String authToken) throws DataAccessException;
 
     /**
      * Clears all authentication data from storage.
      *
-     * @throws DataAccessException if the operation fails
+     * @throws DataAccessException if the clear operation fails
      */
-    void clear() throws DataAccessException;
+    void clearAll() throws DataAccessException;
 }

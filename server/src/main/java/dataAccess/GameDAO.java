@@ -1,10 +1,10 @@
 package dataAccess;
 
-import model.gameData;
+import model.GameData;
 import java.util.Collection;
 
 // Interface defining methods for managing game data
-public interface gameDAO {
+public interface GameDAO {
     /**
      * Creates a new game with the specified name.
      *
@@ -12,7 +12,7 @@ public interface gameDAO {
      * @return the created gameData object
      * @throws DataAccessException if the game name is invalid or creation fails
      */
-    gameData createGame(String gameName) throws DataAccessException;
+    GameData createGame(String gameName) throws DataAccessException;
 
     /**
      * Retrieves a game by its ID.
@@ -21,7 +21,7 @@ public interface gameDAO {
      * @return the gameData object for the specified ID
      * @throws DataAccessException if the game ID is invalid or the game is not found
      */
-    gameData getGame(int gameID) throws DataAccessException;
+    GameData getGame(int gameID) throws DataAccessException;
 
     /**
      * Lists all games in storage.
@@ -29,7 +29,7 @@ public interface gameDAO {
      * @return a collection of all gameData objects
      * @throws DataAccessException if the operation fails
      */
-    Collection<gameData> listgame() throws DataAccessException;
+    Collection<GameData> listgame() throws DataAccessException;
 
     /**
      * Updates an existing game with new data.
@@ -37,7 +37,7 @@ public interface gameDAO {
      * @param game the gameData object containing updated game information
      * @throws DataAccessException if the game is invalid or not found
      */
-    void updateGame(gameData game) throws DataAccessException;
+    void updateGame(GameData game) throws DataAccessException;
 
     /**
      * Clears all game data from storage.
