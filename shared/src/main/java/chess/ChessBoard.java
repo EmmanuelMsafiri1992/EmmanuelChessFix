@@ -35,6 +35,7 @@ public class ChessBoard {
     public static void main(String[] args){
         ChessBoard source = new ChessBoard();
         ChessBoard copy = new ChessBoard(source);
+        System.out.println(copy);
 
 //        source.grid[0] = "x";
 //        return copy.grid[0];

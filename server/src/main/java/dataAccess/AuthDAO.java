@@ -2,6 +2,7 @@ package dataAccess;
 
 import model.AuthData;
 
+
 /**
  * Interface for managing authentication data operations.
  * Provides methods to create, retrieve, delete, and clear authentication tokens.

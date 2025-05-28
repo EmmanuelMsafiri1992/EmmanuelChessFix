@@ -11,11 +11,7 @@ public class MySQLAuthDAO implements AuthDAO {
     private final DatabaseManager dbManager;
 
     public MySQLAuthDAO() throws DataAccessException {
-        try {
-            this.dbManager = new DatabaseManager();
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to initialize database: " + e.getMessage());
-        }
+        this.dbManager = new DatabaseManager();
     }
 
     public MySQLAuthDAO(DatabaseManager dbManager) throws DataAccessException {
@@ -60,7 +56,7 @@ public class MySQLAuthDAO implements AuthDAO {
     @Override
     public void deleteAuthToken(String authToken) throws DataAccessException {
         String sql = "DELETE FROM authTokens WHERE authToken = ?";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, authToken);
             stmt.executeUpdate();
@@ -72,7 +68,7 @@ public class MySQLAuthDAO implements AuthDAO {
     @Override
     public void clearAll() throws DataAccessException {
         String sql = "DELETE FROM authTokens";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {

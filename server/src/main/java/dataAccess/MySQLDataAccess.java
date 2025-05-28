@@ -1,7 +1,5 @@
 package dataAccess;
 
-import java.sql.SQLException;
-
 public class MySQLDataAccess implements DataAccess {
     private final UserDAO userDAO;
     private final GameDAO gameDAO;
@@ -11,10 +9,10 @@ public class MySQLDataAccess implements DataAccess {
     public MySQLDataAccess() throws DataAccessException {
         try {
             this.dbManager = new DatabaseManager();
-            this.userDAO = new MySQLUserDAO(dbManager);
-            this.gameDAO = new MySQLGameDAO(dbManager);
+            this.userDAO = new MySQLUserDAO();
+            this.gameDAO = new MySQLGameDAO();
             this.authDAO = new MySQLAuthDAO(dbManager);
-        } catch (SQLException | DataAccessException e) {
+        } catch (DataAccessException e) {
             throw new DataAccessException("Failed to initialize database or DAOs: " + e.getMessage());
         }
     }

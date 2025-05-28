@@ -12,18 +12,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class MySQLGameDAO implements GameDAO {
-    private final DatabaseManager dbManager;
     private final Gson gson;
 
     public MySQLGameDAO() throws DataAccessException {
-        this.dbManager = new DatabaseManager();
-        this.gson = new GsonBuilder()
-                .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
-                .create();
-    }
-
-    public MySQLGameDAO(DatabaseManager dbManager) throws DataAccessException {
-        this.dbManager = dbManager;
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                 .create();
@@ -32,7 +23,7 @@ public class MySQLGameDAO implements GameDAO {
     @Override
     public GameData createGame(String gameName) throws DataAccessException {
         String sql = "INSERT INTO games (gameName, game) VALUES (?, ?)";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, gameName);
             ChessGame game = new ChessGame();
@@ -53,7 +44,7 @@ public class MySQLGameDAO implements GameDAO {
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
         String sql = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM games WHERE gameID = ?";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, gameID);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -78,7 +69,7 @@ public class MySQLGameDAO implements GameDAO {
     public Collection<GameData> listgame() throws DataAccessException {
         Collection<GameData> games = new ArrayList<>();
         String sql = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM games";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
@@ -100,7 +91,7 @@ public class MySQLGameDAO implements GameDAO {
     @Override
     public void updateGame(GameData game) throws DataAccessException {
         String sql = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ? WHERE gameID = ?";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, game.whiteUsername());
             stmt.setString(2, game.blackUsername());
@@ -116,7 +107,7 @@ public class MySQLGameDAO implements GameDAO {
     @Override
     public void clear() throws DataAccessException {
         String sql = "DELETE FROM games";
-        try (Connection conn = dbManager.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {

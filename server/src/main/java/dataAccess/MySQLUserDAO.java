@@ -7,16 +7,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MySQLUserDAO implements UserDAO {
-    private final DatabaseManager db;
+    // Removed unused DatabaseManager db field and constructor parameter
 
-    public MySQLUserDAO(DatabaseManager db) {
-        this.db = db;
+    public MySQLUserDAO() {
+        // No-arg constructor
     }
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
         String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
-        try (Connection conn = db.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, user.username());
             stmt.setString(2, user.password());
@@ -30,7 +30,7 @@ public class MySQLUserDAO implements UserDAO {
     @Override
     public UserData getUser(String username) throws DataAccessException {
         String sql = "SELECT username, password, email FROM users WHERE username = ?";
-        try (Connection conn = db.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
@@ -50,7 +50,7 @@ public class MySQLUserDAO implements UserDAO {
     @Override
     public void clear() throws DataAccessException {
         String sql = "DELETE FROM users";
-        try (Connection conn = db.getConnection();
+        try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
