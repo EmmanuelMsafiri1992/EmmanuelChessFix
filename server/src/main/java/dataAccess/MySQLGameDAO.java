@@ -12,21 +12,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public class MySQLGameDAO implements GameDAO {
-    private final DatabaseManager dbManager; // Changed from Database
+    private final DatabaseManager dbManager;
     private final Gson gson;
 
     public MySQLGameDAO() throws DataAccessException {
-        try {
-            this.dbManager = new DatabaseManager();
-        } catch (SQLException e) {
-            throw new DataAccessException("Unable to initialize database: " + e.getMessage());
-        }
+        this.dbManager = new DatabaseManager();
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
                 .create();
     }
 
-    public MySQLGameDAO(DatabaseManager dbManager) throws DataAccessException { // Updated for testing
+    public MySQLGameDAO(DatabaseManager dbManager) throws DataAccessException {
         this.dbManager = dbManager;
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(ChessGame.class, new ChessGameTypeAdapter())
